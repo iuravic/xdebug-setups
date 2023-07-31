@@ -1,3 +1,5 @@
+## Custom Local setup
+
 Run all of these from within site's context (not from your regular local terminal), i.e. open Local > site > "Open site shell" :
 
 - `init.sh` -- a custom ".bashrc" script. Not sure how to maintain one single .bashrc throughout all the Local sites, so I maintain this one. It has some aliases that I regularly use, and xdebug specific aliases get automatically inserted into this script by the next script `setup_this_site.sh`. Every time a site's Local terminal is opened (via "Open site shell") `$ source init.sh` also gets executed in my terminal which loads up all the aliases for that terminal session
