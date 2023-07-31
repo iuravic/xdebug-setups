@@ -1,0 +1,74 @@
+version: '3'
+services:
+    xdmysql:
+        image: mariadb:latest
+        container_name: xdmysql
+        networks:
+            - xdnetwork
+        ports:
+            - 3306:3306
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+            MYSQL_ROOT_HOST: "%"
+            MYSQL_ROOT_PASSWORD: "root"
+        restart: unless-stopped
+        volumes:
+            - xdmysqldata:/var/lib/mysql
+            # shared common volumes
+            - ./www:/var/www
+    xdphp:
+        build:
+            context: .docker/php
+            dockerfile: xdphp.Dockerfile
+        depends_on:
+            - xdmysql
+        container_name: xdphp
+        networks:
+            - xdnetwork
+        tty: true
+        restart: unless-stopped
+        working_dir: /var/www
+        environment:
+            - COMPOSER_AUTH
+        volumes:
+            # php and modules config
+            - ./.docker/php/conf.d/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+            - ./.docker/php/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+            - ./.docker/php/php.ini:/usr/local/etc/php/php.ini
+            # shared common volumes
+            - ./www:/var/www
+            #- ./.docker/www/wp_cli_install_site.sh:/var/www/wp_cli_install_site.sh
+    xdnginx:
+        build:
+            context: .docker/nginx
+            dockerfile: xdnginx.Dockerfile
+        container_name: xdnginx
+        depends_on:
+            - xdphp
+        networks:
+            - xdnetwork
+        ports:
+            - 80:80
+            - 443:443
+        tty: true
+        working_dir: /var/www
+        restart: unless-stopped
+        volumes:
+            # ### script add nginx conf ###
+            - ./.docker/nginx/conf.d/dockersite.test.conf:/etc/nginx/conf.d/dockersite.test.conf
+            - ./.docker/nginx/conf.d/upstream.conf:/etc/nginx/conf.d/upstream.conf
+            # ### logs
+            - ./logs/nginx/:/var/log/nginx
+            # ssl certs
+            - ./.docker/ssl:/etc/nginx/ssl/selfsigned
+            # shared common volumes
+            - ./www:/var/www
+            #- ./.docker/www/wp_cli_install_site.sh:/var/www/wp_cli_install_site.sh
+volumes:
+    # The reason we don’t want to use a folder in the local file system is that when the application is uploaded to a real web server, you don’t want to overwrite the real database with your test one. All your test/development environment records will be stored in here. This allows you to have a different database on the live server and development server when you come to uploading your website.
+    xdmysqldata: {}
+
+# We have to connect to the same network to ensure we can use the same DB
+networks:
+  xdnetwork:
+    driver: bridge
