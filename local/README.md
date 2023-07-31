@@ -1,4 +1,4 @@
-## Custom Local setup
+## Custom Local setup with Xdebug
 
 Run all of these from within site's context (not from your regular local terminal), i.e. open Local > site > "Open site shell" :
 
